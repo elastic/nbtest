@@ -79,6 +79,10 @@ rules:
 In the above example, the variables that will be used to source these prompts
 are `ELASTIC_CLOUD_ID` and `ELASTIC_API_KEY`.
 
+As a convenience, `nbtest` imports all variables defined in a `.env` file if
+found. The `--env-file` option can be used to provide an alternative
+environment file.
+
 ## Set up and tear down procedures
 
 Sometimes it is necessary to perform "set up" and/or "tear down" operations

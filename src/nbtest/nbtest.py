@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from dotenv import load_dotenv
 import argparse
 from copy import deepcopy
 import difflib
@@ -167,7 +168,7 @@ def nbtest_one(notebook, verbose):
 
 
 
-def nbtest(notebook, verbose):
+def nbtest(notebook, verbose, **kwargs):
     """Main entry point. The given notebooks are executed, and for any cells
     that include output, the newly generated output is diffed.
     """
@@ -182,12 +183,17 @@ def nbtest(notebook, verbose):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('notebook', nargs='+')
-    parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument(
+        '-e', '--env-file', default='.env',
+        help='Import environment variables from this file (default is .env)')
+    parser.add_argument(
+        '-v', '--verbose', action='store_true', help='Verbose output')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+    load_dotenv(args.env_file)
     register_python3_test_kernel()
     try:
         sys.exit(nbtest(**args.__dict__))
