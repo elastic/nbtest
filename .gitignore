@@ -10,3 +10,4 @@ test/nbtest/dist
 venv
 .venv
 .env*
+dist
