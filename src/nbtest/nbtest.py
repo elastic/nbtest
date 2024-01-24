@@ -64,9 +64,9 @@ def diff_output(source_output, test_output):
 def nbtest_setup_teardown(notebooks, inject={}):
     ep = ExecutePreprocessor(timeout=600, kernel_name='python3-test',
                              inject=inject)
-    for nb in notebooks:
+    for notebook in notebooks:
         try:
-            with open(nb, 'rt') as f:
+            with open(notebook, 'rt') as f:
                 nb = nbformat.read(f, as_version=4)
         except FileNotFoundError:
             pass
@@ -74,7 +74,7 @@ def nbtest_setup_teardown(notebooks, inject={}):
             try:
                 ep.preprocess(nb, {'metadata': {'path': basedir}})
             except Exception as exc:
-                rprint(f' [red]Failed in {nb}[default]')
+                rprint(f' [red]Failed in {notebook}[default]')
                 print(exc)
                 return 1
 
