@@ -6,6 +6,8 @@ authors = [
 ]
 maintainers = [
     {name = "Miguel Grinberg", email = "miguel.grinberg@elastic.co"},
+    {name = "Joe McElroy", email = "joseph.mcelroy@elastic.co"},
+    {name = "Max Jakob", email = "max.jakob@elastic.co"},
 ]
 description = "Notebook testing tool from Elastic's Search Labs"
 license = {file = "LICENSE"}
@@ -16,6 +18,14 @@ dependencies = [
     "pyyaml",
     "python-dotenv",
 ]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/elastic/nbtest"
+"Bug Tracker" = "https://github.com/elastic/nbtest/issues"
 
 [tool.setuptools]
 zip-safe = false
