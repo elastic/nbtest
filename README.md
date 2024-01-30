@@ -105,6 +105,9 @@ inside this notebook to obtain the name of the notebook under test.
 The second one should be used for set up actions that are specific to one
 notebook.
 
+A global setup notebook can also be provided in the `--setup-notebook` command
+line argument. This notebook is executed once, before any tests.
+
 ### Tear down notebooks
 
 `nbtest` will look for the following notebooks names and execute any that are
@@ -117,3 +120,6 @@ succeeded or failed:
 These notebooks are inteded for cleanup that needs to happen after a text, for
 example to delete indexes that were created. As in the set up case,
 `NBTEST["notebook"]` is set to the notebook that was tested.
+
+A global teardown notebook can also be provided in the `--teardown-notebook`
+command line argument. This notebook is executed once, after all the tests.

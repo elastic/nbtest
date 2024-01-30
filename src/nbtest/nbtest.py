@@ -20,6 +20,10 @@ from rich import print as rprint
 from rich.markdown import Markdown
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+if 'PYTHONPATH' not in os.environ:
+    os.environ['PYTHONPATH'] = basedir
+else:
+    os.environ['PYTHONPATH'] += f':{basedir}'
 
 
 def register_python3_test_kernel():
@@ -61,8 +65,7 @@ def nbtest_setup_teardown(notebooks, inject={}):
                 if cell['cell_type'] == 'code':
                     cell['source'] = f'NBTEST = {inject}\n{cell["source"]}'
             nbclient = NotebookClient(
-                nb, timeout=600, kernel_name='python3-test',
-                resources={'metadata': {'path': basedir}})
+                nb, timeout=600, kernel_name='python3-test')
             try:
                 nbclient.execute()
             except Exception as exc:
@@ -106,8 +109,7 @@ def nbtest_one(notebook, verbose):
     original_cells = deepcopy(nb.cells)
 
     ret = 0
-    nbclient = NotebookClient(nb, timeout=600, kernel_name='python3-test',
-                              resources={'metadata': {'path': basedir}})
+    nbclient = NotebookClient(nb, timeout=600, kernel_name='python3-test')
     try:
         nbclient.execute()
     except Exception as exc:
@@ -166,38 +168,49 @@ def nbtest_one(notebook, verbose):
     return ret
 
 
-def nbtest(notebook, verbose, **kwargs):
+def nbtest(notebook, verbose=False, setup_notebook='', teardown_notebook='',
+           **kwargs):
     """Main entry point. The given notebooks are executed, and for any cells
     that include output, the newly generated output is diffed.
     """
+    register_python3_test_kernel()
     ret = 0
-    for nb in notebook:
-        nbfilename = nb.split('/')[-1]
-        if not nbfilename.startswith('_nbtest'):
-            ret += nbtest_one(notebook=nb, verbose=verbose)
+    try:
+        if setup_notebook:
+            nbtest_setup_teardown([setup_notebook])
+        for nb in notebook:
+            nbfilename = nb.split('/')[-1]
+            if not nbfilename.startswith('_nbtest'):
+                ret += nbtest_one(notebook=nb, verbose=verbose)
+        if teardown_notebook:
+            nbtest_setup_teardown([teardown_notebook])
+    finally:
+        unregister_python3_test_kernel()
     return ret
 
 
-def parse_args():
+def parse_args():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument('notebook', nargs='+')
     parser.add_argument(
         '-e', '--env-file', default='.env',
         help='Import environment variables from this file (default is .env)')
     parser.add_argument(
+        '-s', '--setup-notebook', default='',
+        help='Setup notebook to run before running tests')
+    parser.add_argument(
+        '-t', '--teardown-notebook', default='',
+        help='Teardown notebook to run after running tests')
+    parser.add_argument(
         '-v', '--verbose', action='store_true', help='Verbose output')
     return parser.parse_args()
 
 
-def main():
+def main():  # pragma: no cover
     args = parse_args()
     load_dotenv(args.env_file)
-    register_python3_test_kernel()
-    try:
-        sys.exit(nbtest(**args.__dict__))
-    finally:
-        unregister_python3_test_kernel()
+    sys.exit(nbtest(**args.__dict__))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
