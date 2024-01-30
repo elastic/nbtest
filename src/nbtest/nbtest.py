@@ -15,23 +15,11 @@ os.environ['JUPYTER_PLATFORM_DIRS'] = '1'
 from jupyter_core.paths import jupyter_data_dir
 from jupyter_client.kernelspec import KernelSpecManager
 import nbformat
-from nbconvert.preprocessors import ExecutePreprocessor as OriginalExecutePreprocessor
+from nbclient import NotebookClient
 from rich import print as rprint
 from rich.markdown import Markdown
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-
-
-class ExecutePreprocessor(OriginalExecutePreprocessor):
-    def __init__(self, **kwargs):
-        self.inject = kwargs.pop('inject', {})
-        super().__init__(**kwargs)
-
-    def preprocess_cell(self, cell, resources, index):
-        """Inject the notebook name as variable NBTEST_NOTEBOOK"""
-        if cell['cell_type'] == 'code':
-            cell['source'] = f'NBTEST = {self.inject}\n{cell["source"]}'
-        return super().preprocess_cell(cell, resources, index)
 
 
 def register_python3_test_kernel():
@@ -62,8 +50,6 @@ def diff_output(source_output, test_output):
 
 
 def nbtest_setup_teardown(notebooks, inject={}):
-    ep = ExecutePreprocessor(timeout=600, kernel_name='python3-test',
-                             inject=inject)
     for notebook in notebooks:
         try:
             with open(notebook, 'rt') as f:
@@ -71,12 +57,19 @@ def nbtest_setup_teardown(notebooks, inject={}):
         except FileNotFoundError:
             pass
         else:
+            for cell in nb.cells:
+                if cell['cell_type'] == 'code':
+                    cell['source'] = f'NBTEST = {inject}\n{cell["source"]}'
+            nbclient = NotebookClient(nb, timeout=600,
+                                      kernel_name='python3-test',
+                                      resources={'metadata': {'path': basedir}})
             try:
-                ep.preprocess(nb, {'metadata': {'path': basedir}})
+                nbclient.execute()
             except Exception as exc:
                 rprint(f' [red]Failed in {notebook}[default]')
                 print(exc)
                 return 1
+    return 0
 
 
 def nbtest_one(notebook, verbose):
@@ -99,10 +92,10 @@ def nbtest_one(notebook, verbose):
         os.path.join(notebook_dir, '_nbtest.setup.ipynb'),
         os.path.join(notebook_dir, f'_nbtest.setup.{notebook_name}'),
     ]
-    nbtest_setup_teardown(setup_notebooks, inject={'notebook': notebook_name})
+    if nbtest_setup_teardown(setup_notebooks, inject={'notebook': notebook_name}):
+        return 1
  
     # run the target notebook
-    ep = ExecutePreprocessor(timeout=600, kernel_name='python3-test')
     try:
         with open(notebook, 'rt') as f:
             nb = nbformat.read(f, as_version=4)
@@ -112,8 +105,10 @@ def nbtest_one(notebook, verbose):
     original_cells = deepcopy(nb.cells)
 
     ret = 0
+    nbclient = NotebookClient(nb, timeout=600, kernel_name='python3-test',
+                              resources={'metadata': {'path': basedir}})
     try:
-        ep.preprocess(nb, {'metadata': {'path': basedir}})
+        nbclient.execute()
     except Exception as exc:
         rprint(' [red]Failed[default]')
         print(exc)
