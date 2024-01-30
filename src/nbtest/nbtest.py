@@ -60,9 +60,9 @@ def nbtest_setup_teardown(notebooks, inject={}):
             for cell in nb.cells:
                 if cell['cell_type'] == 'code':
                     cell['source'] = f'NBTEST = {inject}\n{cell["source"]}'
-            nbclient = NotebookClient(nb, timeout=600,
-                                      kernel_name='python3-test',
-                                      resources={'metadata': {'path': basedir}})
+            nbclient = NotebookClient(
+                nb, timeout=600, kernel_name='python3-test',
+                resources={'metadata': {'path': basedir}})
             try:
                 nbclient.execute()
             except Exception as exc:
@@ -92,9 +92,10 @@ def nbtest_one(notebook, verbose):
         os.path.join(notebook_dir, '_nbtest.setup.ipynb'),
         os.path.join(notebook_dir, f'_nbtest.setup.{notebook_name}'),
     ]
-    if nbtest_setup_teardown(setup_notebooks, inject={'notebook': notebook_name}):
+    if nbtest_setup_teardown(setup_notebooks,
+                             inject={'notebook': notebook_name}):
         return 1
- 
+
     # run the target notebook
     try:
         with open(notebook, 'rt') as f:
@@ -133,9 +134,11 @@ def nbtest_one(notebook, verbose):
                             rprint(f'>>>>> [magenta]code cell #{cell}({name})'
                                    '[default]: [dim white]Skipped[default]')
                         continue
-                    base = preprocess_output(str(source_output[name]), config['masks'])
-                    current = preprocess_output(str(test_output.get(name, '')), config['masks'])
-                    if  base == current:
+                    base = preprocess_output(str(source_output[name]),
+                                             config['masks'])
+                    current = preprocess_output(str(test_output.get(name, '')),
+                                                config['masks'])
+                    if base == current:
                         if verbose:
                             rprint(f'>>>>> [yellow]code cell #{cell}/({name})'
                                    '[default]: [green]OK[default]')
@@ -158,9 +161,9 @@ def nbtest_one(notebook, verbose):
         os.path.join(notebook_dir, f'_nbtest.teardown.{notebook_name}'),
         os.path.join(notebook_dir, '_nbtest.teardown.ipynb'),
     ]
-    nbtest_setup_teardown(teardown_notebooks, inject={'notebook': notebook_name})
+    nbtest_setup_teardown(teardown_notebooks,
+                          inject={'notebook': notebook_name})
     return ret
-
 
 
 def nbtest(notebook, verbose, **kwargs):

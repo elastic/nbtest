@@ -1,1 +1,1 @@
-from .nbtest import main
+from .nbtest import main  # noqa: F401

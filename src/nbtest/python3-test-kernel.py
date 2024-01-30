@@ -27,6 +27,5 @@ if __name__ == "__main__":
     if sys.path[0] == "":
         del sys.path[0]
 
-
     from ipykernel.kernelapp import IPKernelApp
     IPKernelApp.launch_instance(kernel_class=BatchIPythonKernel)
