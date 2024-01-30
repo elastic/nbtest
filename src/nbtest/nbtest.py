@@ -65,7 +65,7 @@ def nbtest_setup_teardown(notebooks, mocks='', inject={}):
                 if cell['cell_type'] == 'code':
                     cell['source'] = f'NBTEST = {inject}\n{cell["source"]}'
                     if mocks:
-                       cell['source'] = f'import {mocks}\n{cell["source"]}'
+                        cell['source'] = f'import {mocks}\n{cell["source"]}'
                     break
             nbclient = NotebookClient(
                 nb, timeout=600, kernel_name='python3-test')
