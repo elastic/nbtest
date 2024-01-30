@@ -25,3 +25,7 @@ def test_setup_teardown():
         assert f.readline() == "teardown: {'notebook': 'success.ipynb'}\n"
     with open('_global_teardown.txt') as f:
         assert f.readline() == "teardown: {}\n"
+
+
+def test_mocks():
+    assert nbtest([f'{basedir}/mocks/success.ipynb'], mocks='tests.mocks') == 0

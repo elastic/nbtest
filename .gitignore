@@ -11,3 +11,6 @@ venv
 .venv
 .env*
 dist
+.coverage
+coverage.xml
+_*.txt

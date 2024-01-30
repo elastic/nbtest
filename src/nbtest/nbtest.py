@@ -53,7 +53,7 @@ def diff_output(source_output, test_output):
     rprint(Markdown(f'```diff\n{diff}```\n', code_theme='vim'))
 
 
-def nbtest_setup_teardown(notebooks, inject={}):
+def nbtest_setup_teardown(notebooks, mocks='', inject={}):
     for notebook in notebooks:
         try:
             with open(notebook, 'rt') as f:
@@ -64,6 +64,9 @@ def nbtest_setup_teardown(notebooks, inject={}):
             for cell in nb.cells:
                 if cell['cell_type'] == 'code':
                     cell['source'] = f'NBTEST = {inject}\n{cell["source"]}'
+                    if mocks:
+                       cell['source'] = f'import {mocks}\n{cell["source"]}'
+                    break
             nbclient = NotebookClient(
                 nb, timeout=600, kernel_name='python3-test')
             try:
@@ -75,7 +78,7 @@ def nbtest_setup_teardown(notebooks, inject={}):
     return 0
 
 
-def nbtest_one(notebook, verbose):
+def nbtest_one(notebook, mocks, verbose):
     """Run a notebook and ensure output is the same as in the original."""
     rprint(f'Running [yellow]{notebook}[default]...', end='')
 
@@ -95,7 +98,7 @@ def nbtest_one(notebook, verbose):
         os.path.join(notebook_dir, '_nbtest.setup.ipynb'),
         os.path.join(notebook_dir, f'_nbtest.setup.{notebook_name}'),
     ]
-    if nbtest_setup_teardown(setup_notebooks,
+    if nbtest_setup_teardown(setup_notebooks, mocks=mocks,
                              inject={'notebook': notebook_name}):
         return 1
 
@@ -106,6 +109,10 @@ def nbtest_one(notebook, verbose):
     except FileNotFoundError:
         rprint(' [red]Not found[default]')
         return 1
+    if mocks:
+        for cell in nb.cells:
+            if cell['cell_type'] == 'code':
+                cell['source'] = f'import {mocks}\n{cell["source"]}'
     original_cells = deepcopy(nb.cells)
 
     ret = 0
@@ -163,13 +170,14 @@ def nbtest_one(notebook, verbose):
         os.path.join(notebook_dir, f'_nbtest.teardown.{notebook_name}'),
         os.path.join(notebook_dir, '_nbtest.teardown.ipynb'),
     ]
-    nbtest_setup_teardown(teardown_notebooks,
-                          inject={'notebook': notebook_name})
+    if nbtest_setup_teardown(teardown_notebooks, mocks=mocks,
+                             inject={'notebook': notebook_name}):
+        return ret or 1
     return ret
 
 
 def nbtest(notebook, verbose=False, setup_notebook='', teardown_notebook='',
-           **kwargs):
+           mocks='', **kwargs):
     """Main entry point. The given notebooks are executed, and for any cells
     that include output, the newly generated output is diffed.
     """
@@ -181,7 +189,7 @@ def nbtest(notebook, verbose=False, setup_notebook='', teardown_notebook='',
         for nb in notebook:
             nbfilename = nb.split('/')[-1]
             if not nbfilename.startswith('_nbtest'):
-                ret += nbtest_one(notebook=nb, verbose=verbose)
+                ret += nbtest_one(notebook=nb, mocks=mocks, verbose=verbose)
         if teardown_notebook:
             nbtest_setup_teardown([teardown_notebook])
     finally:
@@ -197,10 +205,13 @@ def parse_args():  # pragma: no cover
         help='Import environment variables from this file (default is .env)')
     parser.add_argument(
         '-s', '--setup-notebook', default='',
-        help='Setup notebook to run before running tests')
+        help='Setup notebook to run before tests')
     parser.add_argument(
         '-t', '--teardown-notebook', default='',
-        help='Teardown notebook to run after running tests')
+        help='Teardown notebook to run after tests')
+    parser.add_argument(
+        '-m', '--mocks', default='',
+        help='Python module to import before each notebook runs')
     parser.add_argument(
         '-v', '--verbose', action='store_true', help='Verbose output')
     return parser.parse_args()

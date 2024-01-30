@@ -123,3 +123,29 @@ example to delete indexes that were created. As in the set up case,
 
 A global teardown notebook can also be provided in the `--teardown-notebook`
 command line argument. This notebook is executed once, after all the tests.
+
+## Mocking and/or Monkey-Patching
+
+For specific cases in which it is necessary for tests to alter the behavior of
+functions or methods, `nbtest` provides the `--mocks` option. The argument to
+this option is a Python module name, exactly as it would be entered in an
+`import` statement. The module will be imported in the context of the notebook
+and any defined setup and teardown procedures.
+
+The module passed to the `--mocks` option can apply any patching techniques as
+needed by the tests. The following example patches the `Elasticsearch` class to
+always connect to a locally hosted instance without authentication, regardless
+of the connection arguments that are passed:
+
+```python
+import elasticsearch
+
+orig_es_init = elasticsearch.Elasticsearch.__init__
+
+
+def patched_es_init(self, *args, **kwargs):
+    return orig_es_init(self, 'http://localhost:9200')
+
+
+elasticsearch.Elasticsearch.__init__ = patched_es_init
+```
