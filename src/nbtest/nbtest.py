@@ -63,9 +63,11 @@ def nbtest_setup_teardown(notebooks, mocks='', inject={}):
         else:
             for cell in nb.cells:
                 if cell['cell_type'] == 'code':
-                    cell['source'] = f'NBTEST = {inject}\n{cell["source"]}'
+                    cell['source'] = f'NBTEST = {inject}  # nbtest\n' + \
+                        cell["source"]
                     if mocks:
-                        cell['source'] = f'import {mocks}\n{cell["source"]}'
+                        cell['source'] = f'import {mocks}  # nbtest\n' + \
+                            cell["source"]
                     break
             nbclient = NotebookClient(
                 nb, timeout=600, kernel_name='python3-test')
@@ -112,7 +114,8 @@ def nbtest_one(notebook, mocks, verbose):
     if mocks:
         for cell in nb.cells:
             if cell['cell_type'] == 'code':
-                cell['source'] = f'import {mocks}\n{cell["source"]}'
+                cell['source'] = f'import {mocks}  # nbtest\n{cell["source"]}'
+                break
     original_cells = deepcopy(nb.cells)
 
     ret = 0
